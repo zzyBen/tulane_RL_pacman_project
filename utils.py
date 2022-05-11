@@ -1,3 +1,5 @@
+import numpy as np
+
 # game.py
 # -------
 # Licensing Information:  You are free to use or extend these projects for
@@ -110,3 +112,37 @@ class Grid:
                 currentInt = 0
         bits.append(currentInt)
         return tuple(bits)
+
+class q_table_dict:
+    def __init__(self, action_space):
+        self.action_space = action_space
+        self.data = dict()
+
+    def init_state_if_not(self, state):
+        if state not in self.data:
+            self.data[state] = np.zeros([self.action_space,])
+    
+    def get(self, state):
+        self.init_state_if_not(state)
+        
+        return self.data[state]
+
+    def get_state_action(self, state, action):
+        self.init_state_if_not(state)
+
+        return self.data[state][action]
+
+    def set_state_action(self, state, action, value):
+        self.init_state_if_not(state)
+
+        self.data[state][action] = value
+    
+    def get_max_action(self, state):
+        self.init_state_if_not(state)
+
+        return np.argmax(self.data[state])
+    
+    def get_max_value(self, state):
+        self.init_state_if_not(state)
+
+        return np.max(self.data[state])

@@ -38,14 +38,14 @@ def train_naive(env, pacman, ghost_1, ghost_2, episodes, version_name):
                 break
 
             # # Train ghost 1
-            # reward, done, info = ghost_1.step_random()
-            # if done:
-            #     break
+            reward, done, info = ghost_1.step_random()
+            if done:
+                break
 
             # # Train ghost 2
-            # reward, done, info = ghost_2.step_random()
-            # if done:
-            #     break
+            reward, done, info = ghost_2.step_random()
+            if done:
+                break
 
         print('\t{}\n\t train total reward = {}'.format(info, pacman.total_reward))
 
@@ -66,8 +66,8 @@ def train_naive(env, pacman, ghost_1, ghost_2, episodes, version_name):
                     pacman_evaluation_reward_list,
                     food_left_list]
 
-        if i % 20 == 1:
-            pacman.save_q_table(version_name)
+        if i % 500 == 1:
+            # pacman.save_q_table(version_name)
             save_total_rewards(save_vars, version_name)
             plot_total_rewards(save_vars, version_name)
 
@@ -93,15 +93,15 @@ def evaluate(env, pacman, ghost_1, ghost_2):
         if done:
             break
 
-        # # Train ghost 1
-        # reward, done, info = ghost_1.step_random()
-        # if done:
-        #     break
+        # Train ghost 1
+        reward, done, info = ghost_1.step_random()
+        if done:
+            break
 
         # # Train ghost 2
-        # reward, done, info = ghost_2.step_random()
-        # if done:
-        #     break
+        reward, done, info = ghost_2.step_random()
+        if done:
+            break
 
     print('\t{}\n\ttotal reward = {}'.format(info, pacman.total_reward))
 
@@ -111,10 +111,10 @@ def evaluate(env, pacman, ghost_1, ghost_2):
 def plot_total_rewards(save_vars, version_name):
     # [::2]
     fig, axs = plt.subplots(4, figsize=(15, 15))
-    axs[0].plot(list(range(len(save_vars[0]))), save_vars[0])
-    axs[1].plot(list(range(len(save_vars[3]))), save_vars[3])
-    axs[2].plot(list(range(len(save_vars[4]))), save_vars[4])
-    axs[3].plot(list(range(len(save_vars[5]))), save_vars[5])
+    axs[0].plot(list(range(len(save_vars[0])))[::10], save_vars[0][::10])
+    axs[1].plot(list(range(len(save_vars[3])))[::10], save_vars[3][::10])
+    axs[2].plot(list(range(len(save_vars[4])))[::10], save_vars[4][::10])
+    axs[3].plot(list(range(len(save_vars[5])))[::10], save_vars[5][::10])
     
     axs[0].set_title('Pacman train total reward')
     axs[1].set_title('Number of steps')
@@ -158,9 +158,10 @@ if __name__ == '__main__':
     # layout_path = 'layouts/small.lay'
     # layout_path = 'layouts/super_small.lay'
     # layout_path = 'layouts/ultra_small.lay'
+    layout_path = 'layouts/ultra_small_v2.lay'
     # layout_path = 'layouts/extreme_small.lay'
     # layout_path = 'layouts/extreme_small_2_food.lay'
-    layout_path = 'layouts/extreme_small_3_food.lay'
+    # layout_path = 'layouts/extreme_small_3_food.lay'
 
     env = layout.load_env(layout_path)
 
@@ -184,7 +185,14 @@ if __name__ == '__main__':
     # version_name = 'output/8_normal_pacman_no_ghost_extremesmall_2_food_0.2lr_seefood_1'
     # version_name = 'output/9_normal_pacman_no_ghost_extremesmall_3_food_0.2lr_seefood_3'
     # version_name = 'output/10_normal_pacman_no_ghost_extremesmall_3_food_0.2lr_seefood_2'
-    version_name = 'output/11_normal_pacman_no_ghost_extremesmall_3_food_0.2lr_seefood_1'
+    # version_name = 'output/11_normal_pacman_no_ghost_extremesmall_3_food_0.2lr_seefood_1'
+    # version_name = 'output/1_new_pacman_no_ghost_extremesmall_3_food_0.2lr'
+    # version_name = 'output/2_new_pacman_no_ghost_small_0.2lr'
+    # version_name = 'output/3_new_pacman_1_random_ghost_small_0.2lr'
+    # version_name = 'output/4_new_pacman_2_random_ghosts_small_0.2lr'
+    # version_name = 'output/5_new_pacman_2_random_ghosts_small_0.2lr'
+    # version_name = 'output/6_new_pacman_2_random_ghosts_ultrasmall_0.2lr'
+    version_name = 'output/7_new_pacman_2_random_ghosts_ultrasmall_v2_0.2lr'
 
     train_naive(env, pacman, ghost_1, ghost_2, episodes, version_name)
 

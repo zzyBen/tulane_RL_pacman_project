@@ -23,7 +23,7 @@ class Env:
     """
 
     def __init__(self, layoutText):
-        self.see_food = 1
+        # self.see_food = 1
         self.layoutText = layoutText
         self.width = len(layoutText[0])
         self.height= len(layoutText)
@@ -37,12 +37,12 @@ class Env:
                                                     #          pacman_position, ghost_positions
 
         self.action_space = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
-        self.pacman_state_space = self.width * self.height * (2**self.see_food)
+        # self.pacman_state_space = self.width * self.height * (2**self.see_food)
         self.ghost_state_space = self.width * self.height * self.width * self.height * (2**len(self.food_possible_positions))
 
         self.init_transition_matrix()
 
-        
+
 
 
     ####################################
@@ -119,14 +119,14 @@ class Env:
         # Observe if food in possible positions
         food_binary_list = []
         for i, (food_x, food_y) in enumerate(self.food_possible_positions):
-            if i >= self.see_food:
-                break
+            # if i >= self.see_food:
+            #     break
             if self.food[food_y][food_x]:
                 food_binary_list.append(1)
             else:
                 food_binary_list.append(0)
 
-        state = [self.pacman_position, food_binary_list]
+        state = (self.pacman_position, tuple(self.ghost_positions), tuple(self.food_possible_positions), tuple(food_binary_list))
         state_value = self.pacman_position[0]
         state_value *= self.width
         state_value =+ self.pacman_position[1]
