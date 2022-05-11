@@ -19,7 +19,18 @@ class PacmanAgent_QLearning:
         self.action_space = env.action_space
         self.state_space = env.pacman_state_space
 
-    def step_q_learning(self, gamma=0.7, alpha=0.3, epsilon=0.1):
+    def step_optimal_policy(self):
+        (state, state_index) = self.env.get_pacman_state()
+        action = np.argmax(self.Q[state_index]) # Exploit learned values
+
+        (next_state, next_state_index) , reward , done , info = self.env.pacmam_step(action)
+
+        # Update total reward
+        self.total_reward += reward
+
+        return reward, done, info
+
+    def step_q_learning(self, gamma=0.7, alpha=0.2, epsilon=0.1):
         (state, state_index) = self.env.get_pacman_state()
 
         done = False
@@ -63,6 +74,17 @@ class PacmanAgent_Cheating_QLearning:
         self.total_reward = 0
         self.action_space = env.action_space
         self.state_space = env.ghost_state_space
+
+    def step_optimal_policy(self):
+        (state, state_index) = self.env.get_ghost_state(0)
+        action = np.argmax(self.Q[state_index]) # Exploit learned values
+
+        (next_state, next_state_index) , reward , done , info = self.env.pacmam_step(action)
+
+        # Update total reward
+        self.total_reward += reward
+
+        return reward, done, info
 
     def step_q_learning(self, gamma=0.7, alpha=0.2, epsilon=0.1):
         (state, state_index) = self.env.get_ghost_state(0)

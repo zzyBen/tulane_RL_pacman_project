@@ -23,6 +23,7 @@ class Env:
     """
 
     def __init__(self, layoutText):
+        self.see_food = 1
         self.layoutText = layoutText
         self.width = len(layoutText[0])
         self.height= len(layoutText)
@@ -36,7 +37,7 @@ class Env:
                                                     #          pacman_position, ghost_positions
 
         self.action_space = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
-        self.pacman_state_space = self.width * self.height * (2**len(self.food_possible_positions))
+        self.pacman_state_space = self.width * self.height * (2**self.see_food)
         self.ghost_state_space = self.width * self.height * self.width * self.height * (2**len(self.food_possible_positions))
 
         self.init_transition_matrix()
@@ -66,18 +67,19 @@ class Env:
             if next_x == food_x and next_y == food_y:
                 if self.food[next_y][next_x]:
                     self.food[next_y][next_x] = False
-                    reward += 3000
+                    reward += 300
                     info += '\tmeet food at ({},{})\n'.format(next_x, next_y)
         
         # Check no food left
         if len(self.food.asList()) == 0:
+            reward += 1000
             done = True
             info += '\tDone because no more food\n'
 
         # Check meeting ghost
         for (ghost_x, ghost_y) in self.ghost_positions:
             if next_x == ghost_x and next_y == ghost_y:
-                reward -= 3000
+                reward -= 300
                 done = True
                 info += '\tDone because meeting ghost at ({},{})\n'.format(next_x, next_y)
 
@@ -103,7 +105,7 @@ class Env:
         # Check meeting pacman
         pacman_x, pacman_y = self.pacman_position
         if next_x == pacman_x and next_y == pacman_y:
-            reward += 5000
+            reward += 500
             done = True
             info += '\tDone because meeting pacman at ({},{})\n'.format(next_x, next_y)
 
@@ -116,7 +118,9 @@ class Env:
     def get_pacman_state(self):
         # Observe if food in possible positions
         food_binary_list = []
-        for (food_x, food_y) in self.food_possible_positions:
+        for i, (food_x, food_y) in enumerate(self.food_possible_positions):
+            if i >= self.see_food:
+                break
             if self.food[food_y][food_x]:
                 food_binary_list.append(1)
             else:
