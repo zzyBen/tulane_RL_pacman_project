@@ -13,41 +13,99 @@
 
 
 from utils import Grid
-
+import gym
+from gym import spaces
 import random
 import copy
 
-class Env:
+class Env(gym.Env):
     """
     A Layout manages the static information about the game board.
     """
 
     def __init__(self, layoutText):
+        super(Env, self).__init__()
         # self.see_food = 1
         self.layoutText = layoutText
-        self.width = len(layoutText[0])
-        self.height= len(layoutText)
-        self.walls = Grid(self.width, self.height, False)
-        self.food = Grid(self.width, self.height, False)
-        self.food_possible_positions = []
-        self.pacman_position = (None, None)
-        self.ghost_positions = []
 
-        self.processLayoutText(layoutText)          # Fill out walls, food, food_possible_positions
-                                                    #          pacman_position, ghost_positions
+        # self.action_space = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
+        self.action_space = spaces.Discrete(4)
+        # self.action_space = 4
+        self.pacman = None
+        self.ghost_1 = None
+        self.ghost_2 = None
+        self.train_who = None
 
-        self.action_space = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
-        # self.pacman_state_space = self.width * self.height * (2**self.see_food)
-        self.ghost_state_space = self.width * self.height * self.width * self.height * (2**len(self.food_possible_positions))
-
+        self.load_layout()
         self.init_transition_matrix()
-
 
 
 
     ####################################
     ##        Callable Functions      ##
     ####################################
+
+    def reset(self):
+        self.load_layout()
+
+        if self.train_who == 'pacman':
+            return self.get_pacman_state()
+        elif self.train_who == 'ghost_2':
+            return self.get_ghost_state()
+        else:
+            print('ERROR: invalid who to train:{}'.format(self.train_who))
+
+    def set_pacman_ghost(self, pacman, ghost_1, ghost_2):
+        self.pacman = pacman
+        self.ghost_1 = ghost_1
+        self.ghost_2 = ghost_2
+
+    def set_train_who(self, train_who):
+        self.train_who = train_who
+
+    def step(self, action_value):
+        if self.train_who == 'pacman':
+            # Train pacman
+            next_state, reward, done, info = self.pacmam_step(action_value)
+            if done:
+                return next_state, reward, done, info
+
+            # Predict ghost 1
+            action = self.ghost_1.predict(self.get_ghost_state(0), deterministic=True)
+            trash_next_state, trash_reward, trash_done, trash_info = self.ghost_step(0, action_value)
+            if trash_done:
+                return next_state, reward, trash_done, info
+
+            # Predict ghost 2
+            action = self.ghost_2.predict(self.get_ghost_state(1), deterministic=True)
+            trash_next_state, trash_reward, trash_done, trash_info = self.ghost_step(1, action_value)
+            if trash_done:
+                return next_state, reward, trash_done, info
+            
+            return next_state, reward, done, info
+
+        elif self.train_who == 'ghost_2':
+            # Train ghost 2
+            next_state, reward, done, info = self.ghost_step(1, action_value)
+            if done:
+                return next_state, reward, done, info
+
+            # Predict pacman
+            action = self.pacman.predict(self.get_pacman_state(), deterministic=True)
+            trash_next_state, trash_reward, trash_done, trash_info = self.pacmam_step(action)
+            if trash_done:
+                return next_state, reward, trash_done, info
+
+            # Predict ghost 1
+            action = self.ghost_1.predict(self.get_ghost_state(1), deterministic=True)
+            trash_next_state, trash_reward, trash_done, trash_info = self.ghost_step(0, action_value)
+            if trash_done:
+                return next_state, reward, trash_done, info
+            
+            return next_state, reward, done, info
+
+        else:
+            print('ERROR: invalid who to train:{}'.format(self.train_who))
 
     def pacmam_step(self, action_value):
         cur_x, cur_y = self.pacman_position
@@ -86,7 +144,7 @@ class Env:
         # Construct next state
         next_state = self.get_pacman_state()
 
-        return (next_state, reward, done, info)
+        return next_state, reward, done, info
 
 
     def ghost_step(self, ghost_index, action_value):
@@ -112,7 +170,7 @@ class Env:
         # Construct next state
         next_state = self.get_ghost_state(ghost_index)
 
-        return (next_state, reward, done, info)
+        return next_state, reward, done, info
 
 
     def get_pacman_state(self):
@@ -127,59 +185,75 @@ class Env:
                 food_binary_list.append(0)
 
         state = (self.pacman_position, tuple(self.ghost_positions), tuple(self.food_possible_positions), tuple(food_binary_list))
-        state_value = self.pacman_position[0]
-        state_value *= self.width
-        state_value =+ self.pacman_position[1]
+        # state_value = self.pacman_position[0]
+        # state_value *= self.width
+        # state_value =+ self.pacman_position[1]
 
-        if len(food_binary_list) > 0:
-            state_value *= self.height
-            state_value += food_binary_list[0]
-            if len(food_binary_list) > 1:
-                for item in food_binary_list[1:]:
-                    state_value *= 2
-                    state_value += item
+        # if len(food_binary_list) > 0:
+        #     state_value *= self.height
+        #     state_value += food_binary_list[0]
+        #     if len(food_binary_list) > 1:
+        #         for item in food_binary_list[1:]:
+        #             state_value *= 2
+        #             state_value += item
 
-        return (state, state_value)
+        return state
 
     def get_ghost_state(self, ghost_index):
-        # Observe if food in possible positions
-        food_binary_list = []
-        for (food_x, food_y) in self.food_possible_positions:
-            if self.food[food_y][food_x]:
-                food_binary_list.append(1)
-            else:
-                food_binary_list.append(0)
+        return self.get_pacman_state()
 
-        state = [self.ghost_positions[ghost_index], self.pacman_position, food_binary_list]
-        state_value = self.ghost_positions[ghost_index][0]
-        state_value *= self.width
-        state_value =+ self.ghost_positions[ghost_index][1]
-        state_value *= self.height
-        state_value += self.pacman_position[0]
-        state_value *= self.width
-        state_value =+ self.pacman_position[1]
+        # # Observe if food in possible positions
+        # food_binary_list = []
+        # for (food_x, food_y) in self.food_possible_positions:
+        #     if self.food[food_y][food_x]:
+        #         food_binary_list.append(1)
+        #     else:
+        #         food_binary_list.append(0)
 
-        if len(food_binary_list) > 0:
-            state_value *= self.height
-            state_value += food_binary_list[0]
-            if len(food_binary_list) > 1:
-                for item in food_binary_list[1:]:
-                    state_value *= 2
-                    state_value += item
+        # state = (self.pacman_position, tuple(self.ghost_positions), tuple(self.food_possible_positions), tuple(food_binary_list))
 
-        return (state, state_value)
+        # state_value = self.ghost_positions[ghost_index][0]
+        # state_value *= self.width
+        # state_value =+ self.ghost_positions[ghost_index][1]
+        # state_value *= self.height
+        # state_value += self.pacman_position[0]
+        # state_value *= self.width
+        # state_value =+ self.pacman_position[1]
+
+        # if len(food_binary_list) > 0:
+        #     state_value *= self.height
+        #     state_value += food_binary_list[0]
+        #     if len(food_binary_list) > 1:
+        #         for item in food_binary_list[1:]:
+        #             state_value *= 2
+        #             state_value += item
+
+        # return state
 
 
-    def deep_copy_new(self):
-        return Env(self.layoutText[:])
+    # def deep_copy_new(self):
+    #     return Env(self.layoutText[:])
 
     ####################################
     ##        Internal Functions      ##
     ####################################
 
+    def load_layout(self):
+        self.width = len(self.layoutText[0])
+        self.height= len(self.layoutText)
+        self.walls = Grid(self.width, self.height, False)
+        self.food = Grid(self.width, self.height, False)
+        self.food_possible_positions = []
+        self.pacman_position = (None, None)
+        self.ghost_positions = []
+
+        self.processLayoutText(self.layoutText)          # Fill out walls, food, food_possible_positions
+                                                    #          pacman_position, ghost_positions
+
+
     def init_transition_matrix(self):
         self.transition_matrix = []
-        action_values = self.action_space.values()
+        action_values = list(range(self.action_space.n))
         for y in range(self.height):
             cur_row_transition = []
             for x in range(self.width):
