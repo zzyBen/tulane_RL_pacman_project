@@ -122,27 +122,32 @@ class q_table_dict:
         if state not in self.data:
             self.data[state] = np.zeros([self.action_space,])
     
-    def get(self, state):
+    def get(self, original_state):
+        state = tuple(original_state.items())
         self.init_state_if_not(state)
         
         return self.data[state]
 
-    def get_state_action(self, state, action):
+    def get_state_action(self, original_state, action):
+        state = tuple(original_state.items())
         self.init_state_if_not(state)
 
         return self.data[state][action]
 
-    def set_state_action(self, state, action, value):
+    def set_state_action(self, original_state, action, value):
+        state = tuple(original_state.items())
         self.init_state_if_not(state)
 
         self.data[state][action] = value
     
-    def get_max_action(self, state):
+    def get_max_action(self, original_state):
+        state = tuple(original_state.items())
         self.init_state_if_not(state)
 
         return np.argmax(self.data[state])
     
-    def get_max_value(self, state):
+    def get_max_value(self, original_state):
+        state = tuple(original_state.items())
         self.init_state_if_not(state)
 
         return np.max(self.data[state])
